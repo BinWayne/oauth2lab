@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -24,7 +25,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	@Autowired
-	private MyUserDetailsService userDetailsService;
+	private UserDetailsService userDetailsService;
 
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -51,7 +52,8 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 		// TODO Auto-generated method stub
 		endpoints.authenticationManager(authenticationManager)
-		.userDetailsService(userDetailsService).accessTokenConverter(accessTokenConverter())
+		//.userDetailsService(userDetailsService)
+		.accessTokenConverter(accessTokenConverter())
 		.allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST);
 		//authenticationManager 通过这个认证
 		//userDetailsService 通过自定义service 查找user
