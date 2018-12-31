@@ -53,6 +53,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
 		// TODO Auto-generated method stub
 		oauthServer.tokenKeyAccess("permitAll()").checkTokenAccess("isAuthenticated()");
+		
 	}
 
 //	@Override
@@ -71,6 +72,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	
 	@Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		
         endpoints.tokenStore(tokenStore())
                  .accessTokenConverter(accessTokenConverter())
                  .authenticationManager(authenticationManager)
@@ -81,15 +83,6 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	@Bean
     public TokenStore tokenStore() {
         return new JwtTokenStore(accessTokenConverter());
-    }
-	
-	@Bean
-    @Primary
-    public DefaultTokenServices tokenServices() {
-        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
-        defaultTokenServices.setTokenStore(tokenStore());
-        defaultTokenServices.setSupportRefreshToken(true);
-        return defaultTokenServices;
     }
 
 
@@ -132,11 +125,15 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 			}
 		};
 		converter.setSigningKey("123");
-		
-       
         return converter;
-
-		
-		
 	}
+	
+	@Bean
+    @Primary
+    public DefaultTokenServices tokenServices() {
+        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+        defaultTokenServices.setTokenStore(tokenStore());
+        defaultTokenServices.setSupportRefreshToken(true);
+        return defaultTokenServices;
+    }
 }

@@ -24,7 +24,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		// TODO Auto-generated method stub
-		return super.authenticationManagerBean();
+		AuthenticationManager authenticationManager = super.authenticationManagerBean();
+		return authenticationManager;
 	}
 
 	@Override
