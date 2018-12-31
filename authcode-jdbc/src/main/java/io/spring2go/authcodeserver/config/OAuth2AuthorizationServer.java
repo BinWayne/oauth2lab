@@ -1,21 +1,29 @@
 package io.spring2go.authcodeserver.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-
-import io.spring2go.authcodejdbc.service.MyUserDetailsService;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
 //授权服务器配置
 @Configuration
@@ -24,8 +32,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 
 	@Autowired
 	private AuthenticationManager authenticationManager;
-	@Autowired
-	private UserDetailsService userDetailsService;
+	
 
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -48,19 +55,45 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 		oauthServer.tokenKeyAccess("permitAll()").checkTokenAccess("isAuthenticated()");
 	}
 
+//	@Override
+//	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+//		// TODO Auto-generated method stub
+//		endpoints.authenticationManager(authenticationManager)
+//		//.userDetailsService(userDetailsService)
+//		.accessTokenConverter(accessTokenConverter())
+//		.allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST);
+//		//authenticationManager 通过这个认证
+//		//userDetailsService 通过自定义service 查找user
+//		//accessTokenConverter 通过这个返回token 变成jwt
+//		//access token 可以是 GET POST 请求获取
+//	}
+	
+	
 	@Override
-	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-		// TODO Auto-generated method stub
-		endpoints.authenticationManager(authenticationManager)
-		//.userDetailsService(userDetailsService)
-		.accessTokenConverter(accessTokenConverter())
-		.allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST);
-		//authenticationManager 通过这个认证
-		//userDetailsService 通过自定义service 查找user
-		//accessTokenConverter 通过这个返回token 变成jwt
-		//access token 可以是 GET POST 请求获取
-	}
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints.tokenStore(tokenStore())
+                 .accessTokenConverter(accessTokenConverter())
+                 .authenticationManager(authenticationManager)
+                 .allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST);
+    }
 
+
+	@Bean
+    public TokenStore tokenStore() {
+        return new JwtTokenStore(accessTokenConverter());
+    }
+	
+	@Bean
+    @Primary
+    public DefaultTokenServices tokenServices() {
+        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+        defaultTokenServices.setTokenStore(tokenStore());
+        defaultTokenServices.setSupportRefreshToken(true);
+        return defaultTokenServices;
+    }
+
+
+	
 	@Bean
     public JwtAccessTokenConverter accessTokenConverter() {
 		
@@ -86,7 +119,18 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 
 	 * 
 	 * */
-		JwtAccessTokenConverter converter = new JwtAccessTokenConverter	();
+		JwtAccessTokenConverter converter = new JwtAccessTokenConverter	() {
+			@Override
+			public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+				User user =(User) authentication.getUserAuthentication().getPrincipal();
+	            final Map<String, Object> additionalInformation = new HashMap<String, Object>();
+	            additionalInformation.put("user_name", user.getUsername());
+	            additionalInformation.put("user_authorities",user.getAuthorities());
+	            ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInformation);
+	            OAuth2AccessToken token = super.enhance(accessToken, authentication);
+	            return token;
+			}
+		};
 		converter.setSigningKey("123");
 		
        
