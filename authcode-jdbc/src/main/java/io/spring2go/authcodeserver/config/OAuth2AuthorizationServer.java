@@ -3,6 +3,8 @@ package io.spring2go.authcodeserver.config;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +35,8 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	@Autowired
 	private AuthenticationManager authenticationManager;
 	
+	@Autowired
+	private  DataSource dataSource;
 
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -76,6 +80,10 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
         endpoints.tokenStore(tokenStore())
                  .accessTokenConverter(accessTokenConverter())
                  .authenticationManager(authenticationManager)
+                // .tokenServices(tokenServices())
+                 //如果不指定tokenService，默认会使用 default token service
+                 //生成的token 是jwt，否则 tokenServices() 根据这个方法生成service，但是不生成jwt
+                 // 除非指定token enhancer
                  .allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST);
     }
 
@@ -85,7 +93,10 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
         return new JwtTokenStore(accessTokenConverter());
     }
 
-
+//	 @Bean
+//	 public TokenStore tokenStore() {
+//	       return new JdbcTokenStore(dataSource);
+//	 }
 	
 	@Bean
     public JwtAccessTokenConverter accessTokenConverter() {
@@ -134,6 +145,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
         DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
         defaultTokenServices.setTokenStore(tokenStore());
         defaultTokenServices.setSupportRefreshToken(true);
+        
         return defaultTokenServices;
     }
 }
