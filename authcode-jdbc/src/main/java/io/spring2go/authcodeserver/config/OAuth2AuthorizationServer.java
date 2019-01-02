@@ -12,16 +12,18 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.config.annotation.builders.ClientDetailsServiceBuilder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.approval.DefaultUserApprovalHandler;
+import org.springframework.security.oauth2.provider.approval.JdbcApprovalStore;
+import org.springframework.security.oauth2.provider.approval.UserApprovalHandler;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
@@ -38,20 +40,13 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 	@Autowired
 	private  DataSource dataSource;
 
+
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-		PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
-        String secret = passwordEncoder.encode("secret");
-
-		clients.inMemory()
-			.withClient("client")
-			.secret(secret)
-			//.redirectUris("http://localhost:8081/oauth/login/client-app")
-			.redirectUris("http://baidu.com")
-				// 授权码模式
-			.authorizedGrantTypes("authorization_code","refresh_token")
-			.scopes("read_userinfo", "read_contacts","app");
+		
+		clients.jdbc(dataSource);
 	}
+	
 
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
@@ -60,6 +55,11 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 		
 	}
 
+	 @Bean
+	   UserApprovalHandler userApprovalHandler() {
+	      return new DefaultUserApprovalHandler();
+	   }
+	 
 //	@Override
 //	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 //		// TODO Auto-generated method stub
@@ -74,12 +74,19 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 //	}
 	
 	
+	@Bean
+	public JdbcApprovalStore approvalStore() {
+	return new JdbcApprovalStore(dataSource);
+	}
+	
 	@Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 		
         endpoints.tokenStore(tokenStore())
                  .accessTokenConverter(accessTokenConverter())
                  .authenticationManager(authenticationManager)
+                 .approvalStore(approvalStore())
+                // .userApprovalHandler(userApprovalHandler())
                 // .tokenServices(tokenServices())
                  //如果不指定tokenService，默认会使用 default token service
                  //生成的token 是jwt，否则 tokenServices() 根据这个方法生成service，但是不生成jwt
@@ -128,8 +135,9 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 			public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
 				User user =(User) authentication.getUserAuthentication().getPrincipal();
 	            final Map<String, Object> additionalInformation = new HashMap<String, Object>();
-	            additionalInformation.put("user_name", user.getUsername());
-	            additionalInformation.put("user_authorities",user.getAuthorities());
+//	            additionalInformation.put("user_name", user.getUsername());
+//	            additionalInformation.put("user_authorities",user.getAuthorities());
+	            additionalInformation.put("userDetails", user);
 	            ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInformation);
 	            OAuth2AccessToken token = super.enhance(accessToken, authentication);
 	            return token;

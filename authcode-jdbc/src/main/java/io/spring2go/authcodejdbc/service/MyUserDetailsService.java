@@ -3,6 +3,7 @@ package io.spring2go.authcodejdbc.service;
 import java.util.Collection;
 import java.util.HashSet;
 
+import org.aspectj.weaver.patterns.ArgsAnnotationPointcut;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -34,5 +35,11 @@ public class MyUserDetailsService implements UserDetailsService {
 		String pwd = passwordEncoder.encode("123456");
 		User user = new User("admin", pwd, authorities);
 		return user;
+	}
+	
+	public static void main(String[] args) {
+		PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+		String pwd = passwordEncoder.encode("secret");
+		System.out.println(pwd);
 	}
 }

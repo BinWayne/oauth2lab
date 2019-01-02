@@ -7,6 +7,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenStore;
 
 //资源服务配置
 @Configuration
@@ -16,6 +17,9 @@ public class OAuth2ResourceServer extends ResourceServerConfigurerAdapter {
 	@Autowired
 	private DefaultTokenServices tokenService;
 	
+	@Autowired
+	private TokenStore tokenStore;
+	
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
@@ -23,14 +27,14 @@ public class OAuth2ResourceServer extends ResourceServerConfigurerAdapter {
             .authenticated()
         .and()
             .requestMatchers()
-            .antMatchers("/api/**");
+            .antMatchers("/api/**","/user/**");
     }
 
     //其实这里可以不用加，默认用DefaultTokenServices
 	@Override
 	public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
 		// TODO Auto-generated method stub
-		resources.tokenServices(tokenService);
+		resources.resourceId("foo").tokenStore(tokenStore);
 	}
 
 
