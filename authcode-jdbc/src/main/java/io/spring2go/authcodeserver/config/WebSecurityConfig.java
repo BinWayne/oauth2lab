@@ -38,10 +38,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		// TODO Auto-generated method stub
 //		http.csrf().disable().authorizeRequests().antMatchers("/", "/oauth/**", "/login", "/health", "/css/**","/oauth/authorize")
 //				.permitAll().anyRequest().authenticated().and().formLogin().loginPage("/login").permitAll();
-		http.csrf().disable().authorizeRequests().antMatchers("/", "/oauth/**", "/login", "/health", "/css/**","/oauth/authorize")
+		http.csrf().disable().authorizeRequests().antMatchers( "/oauth/**", "/login", "/health", "/css/**","/oauth/authorize")
 				.permitAll().anyRequest().authenticated()
 		.and()
-		.formLogin().loginPage("/login").permitAll();
+		.formLogin().loginPage("/login").permitAll()
+		 ;
 		
 //		.csrf().disable() 这个比较重要，否则跳转不到approval 页面
 	}
