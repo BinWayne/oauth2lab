@@ -10,7 +10,7 @@ public class MvcConfig implements WebMvcConfigurer{
 	@Override
 	public void addViewControllers(ViewControllerRegistry registry) {
 		// TODO Auto-generated method stub
-		registry.addViewController("/login").setViewName("login");
+		registry.addViewController("/login").setViewName("mylogin");
 		registry.addViewController("oauth/confirm_access").setViewName("oauth_approval");
 		
 	}
