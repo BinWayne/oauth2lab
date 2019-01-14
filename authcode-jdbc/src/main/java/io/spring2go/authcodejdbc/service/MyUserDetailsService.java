@@ -45,7 +45,7 @@ public class MyUserDetailsService implements UserDetailsService {
 	
 	public static void main(String[] args) {
 		PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
-		String pwd = passwordEncoder.encode("secret");
+		String pwd = passwordEncoder.encode("123456");
 		System.out.println(pwd);
 	}
 }
