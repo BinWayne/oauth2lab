@@ -1,8 +1,5 @@
 package io.spring2go.authcode.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,21 +8,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
-import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.approval.DefaultUserApprovalHandler;
 import org.springframework.security.oauth2.provider.approval.JdbcApprovalStore;
 import org.springframework.security.oauth2.provider.approval.UserApprovalHandler;
 import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.code.JdbcAuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
@@ -93,6 +87,7 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
                  .authenticationManager(authenticationManager)
                  .approvalStore(approvalStore()) // oauth_approvals
                  .authorizationCodeServices(authorizationCodeServices())
+                 .tokenServices(tokenServices())
                 // .userApprovalHandler(userApprovalHandler())
                 // .tokenServices(tokenServices())
                  //如果不指定tokenService，默认会使用 default token service
@@ -111,6 +106,23 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
     public TokenStore tokenStore() {  
         return new JdbcTokenStore(dataSource);  
     }  
+	
+	
+	@Bean
+	@Primary
+	public DefaultTokenServices tokenServices() {
+
+
+		AuthorizationServerTokenServices defaultTokenServices = new AuthorizationServerTokenServices();
+		defaultTokenServices.setTokenStore(tokenStore());
+		defaultTokenServices.setSupportRefreshToken(true);
+		defaultTokenServices.setTokenEnhancer(tokenEnhancer());
+		return defaultTokenServices;
+	}
+	@Bean
+	public TokenEnhancer tokenEnhancer() {
+		return new CustomTokenEnhancer();
+	}
 	
 //	 @Bean
 //	 public TokenStore tokenStore() {
@@ -142,30 +154,11 @@ public class OAuth2AuthorizationServer extends AuthorizationServerConfigurerAdap
 
 	 * 
 	 * */
-		JwtAccessTokenConverter converter = new JwtAccessTokenConverter	() {
-			@Override
-			public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-				User user =(User) authentication.getUserAuthentication().getPrincipal();
-	            final Map<String, Object> additionalInformation = new HashMap<String, Object>();
-//	            additionalInformation.put("user_name", user.getUsername());
-//	            additionalInformation.put("user_authorities",user.getAuthorities());
-	            additionalInformation.put("userDetails", user);
-	            ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInformation);
-	            OAuth2AccessToken token = super.enhance(accessToken, authentication);
-	            return token;
-			}
-		};
+		JwtAccessTokenConverter converter = new JwtAccessTokenConverter	();
+			
 		converter.setSigningKey("123");
         return converter;
 	}
 	
-	@Bean
-    @Primary
-    public DefaultTokenServices tokenServices() {
-        DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
-        defaultTokenServices.setTokenStore(tokenStore());
-        defaultTokenServices.setSupportRefreshToken(true);
-        
-        return defaultTokenServices;
-    }
+	
 }
